@@ -9,6 +9,6 @@ class Tags(Enum):
 
 tags_info = [
     {"name": Tags.HEALTH, "description": "Service health"},
-    {"name": Tags.SHOPPING_CART, "description": "Shopping cart service"},
     {"name": Tags.USER, "description": "Users service"},
+    {"name": Tags.SHOPPING_CART, "description": "Shopping cart service"},
 ]

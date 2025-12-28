@@ -2,19 +2,18 @@ import os
 import pickle
 from typing import Optional
 
-from src.shopping_cart.domain.product_repository import ProductRepository
-from src.shopping_cart.domain.product import Product
+from src.products.domain.product_repository import ProductRepository
+from src.products.domain.product import Product
 
 
 class InFileProductRepository(ProductRepository):
-    def __init__(self):
-        self._name = "shopping_cart.pkl"
+    def __init__(self, name:str):
+        self._name = name
         self.__initialize()
 
     def save(self, product: Product) -> None:
         product_list: list[Product] = self.get_all()
         product_list.append(product)
-        print(product_list)
         self.__save_list(product_list)
 
     def get_all(self) -> list[Product]:

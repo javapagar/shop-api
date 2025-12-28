@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.shopping_cart.domain.product import Product
+from src.products.domain.product import Product
 
 
 class ProductRepository(ABC):

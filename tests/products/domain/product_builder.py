@@ -1,6 +1,6 @@
 
-from src.shopping_cart.domain.product import Product
-from tests.shopping_cart.domain import product_const
+from src.products.domain.product import Product
+from tests import product_const
 
 class ProductBuilder:
     def __init__(self):

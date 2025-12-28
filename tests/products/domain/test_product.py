@@ -1,5 +1,5 @@
-from src.shopping_cart.domain.product import Product
-from tests.shopping_cart.domain.product_builder import ProductBuilder
+from src.products.domain.product import Product
+from tests.products.domain.product_builder import ProductBuilder
 
 def test_product_build(product_id, product_name, product_quantity, product_price):
 

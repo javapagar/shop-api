@@ -4,7 +4,7 @@ from typing import Optional
 from src.users.domain.user import User
 
 
-class UserRepository:
+class  UserRepository:
     @abstractmethod
     def save(self, user: User) -> None: ...
 

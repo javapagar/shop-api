@@ -1,48 +1,58 @@
+import os
+
 from fastapi import APIRouter, HTTPException, status
 
-from api.domain.product_request import ProductRequest
+from api.domain.shopping_cart_product_request import ShoppingCartProductRequest
+from api.domain.shopping_cart_product_list_response import ShoppingCartProductListResponse
 from api.domain.product_response import ProductResponse
 from api.domain.tags import Tags
-from src.shopping_cart.domain.shopping_cart import ShoppingCart
-from src.shopping_cart.application.product_saver import ProductSaver
-from src.shopping_cart.application.product_searcher import ProductSearcher
+from src.shopping_cart.application.shopping_cart_saver import ShopingCartSaver
+from src.shopping_cart.application.shopping_cart_product_searcher import ShoppingCartProductSearcher
 from src.shopping_cart.application.shopping_cart_retriever import ShoppingCartRetriever
-from src.shopping_cart.infrastructure.in_file_product_repository import (
-    InFileProductRepository,
+
+from src.shopping_cart.infrastructure.in_file_shopping_cart_repository import (
+    InFileShoppingCartRepository,
 )
 
-router = APIRouter(
-    prefix="/cart",
-    tags=[Tags.SHOPPING_CART]
-)
+router = APIRouter(prefix="/cart", tags=[Tags.SHOPPING_CART])
 
-product_repository = InFileProductRepository()
+path_data_cart_file_name = os.getenv("PATH_USER_CART", "./data/cart.pkl")
+cart_repository = InFileShoppingCartRepository(path_data_cart_file_name)
+
+# path_data_product_file_name = os.getenv("PATH_PRODUCT", "./data/product.pkl")
+# product_repository = InFileProductRepository(path_data_product_file_name)
+
 
 @router.get(
-    "",
-    response_model=ShoppingCart,
+    "/{user_cart_id}",
+    response_model=ShoppingCartProductListResponse,
     name="Get shopping cart",
     description="Return all products in shopping cart",
 )
-async def get_all():
-    retriever = ShoppingCartRetriever(repository=product_repository)
-    products = retriever.retrieve_all()
-    return ShoppingCart(content=products)
+async def get_all(user_cart_id: str):
+    retriever = ShoppingCartRetriever(repository=cart_repository)
+    products = retriever.retrieve_all(user_cart_id)
+    return products
 
 
 @router.post(
-    "",
+    "/product",
     name="Save product",
     description="Save a product in de shopping cart",
     status_code=status.HTTP_201_CREATED,
 )
-async def save_product_cart(product: ProductRequest):
-    saver = ProductSaver(product_repository)
-    return saver.save(product.name, product.quantity, product.price)
+async def save_product_cart(shopping_product_request: ShoppingCartProductRequest):
+    saver = ShopingCartSaver(cart_repository)
+    return saver.save(
+        shopping_product_request.shopping_cart_uuid,
+        shopping_product_request.name,
+        shopping_product_request.quantity,
+        shopping_product_request.price,
+    )
 
 
 @router.get(
-    "/{uuid}",
+    "/{cart_uuid}/product/{product_uuid}",
     response_model=ProductResponse,
     responses={
         404: {
@@ -55,11 +65,11 @@ async def save_product_cart(product: ProductRequest):
     name="Get product",
     description="Find a product from the shopping cart by uuid",
 )
-async def get_cart_product(uuid: str):
-    retriever = ProductSearcher(repository=product_repository)
-    product = retriever.search(uuid)
+async def get_cart_product(cart_uuid: str, product_uuid):
+    retriever = ShoppingCartProductSearcher(repository=cart_repository)
+    product = retriever.search(cart_uuid, product_uuid)
     if product is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Product {uuid} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Product {product_uuid} not found"
         )
     return product

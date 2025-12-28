@@ -1,7 +1,7 @@
 from uuid import uuid4
 
-from src.shopping_cart.domain.product import Product
-from src.shopping_cart.domain.product_repository import ProductRepository
+from src.products.domain.product import Product
+from src.products.domain.product_repository import ProductRepository
 
 
 class ProductSaver:
