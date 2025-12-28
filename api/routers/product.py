@@ -31,4 +31,4 @@ async def create_product(request: ProductRequest):
         name=request.name, quantity=request.quantity, price=request.price
     )
 
-    return UUIDValue(uuid=uuid_product_created)
+    return UUIDValue(root=uuid_product_created)

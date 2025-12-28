@@ -13,13 +13,21 @@ class InFileShoppingCartRepository(ShoppingCartRepository):
 
     def save_product(self, shopping_cart_id: str, product: Product) -> None:
         shopping_cart = self.get_by_id(shopping_cart_id)
-        product_list = shopping_cart.content.model_dump()
-        product_list.append(product)
+        product_list = shopping_cart.content.root
+        
+        existing_product = self.get_product_by_id(shopping_cart_id, product.uuid)
+        if existing_product is None:
+            product_list.append(product)
+        else:
+            product_list = self.__update_product_from_list(product_list, product.uuid)
+        
         updated_shopping_cart = ShoppingCart(
             content=product_list, cart_uuid=shopping_cart_id
         )
+        
 
         self.__save_shoppin_cart(updated_shopping_cart)
+
 
     def get_product_by_id(
         self, shopping_cart_id: str, product_id: str
@@ -81,3 +89,45 @@ class InFileShoppingCartRepository(ShoppingCartRepository):
             union_name = f"{path_parts[0]}/{union_name}"
 
         return union_name
+
+    def delete_product_by_id(self, shopping_cart_id: str, product_id: str) -> None:
+        shopping_cart = self.get_by_id(shopping_cart_id)
+        product_list = shopping_cart.content.root
+
+        product_list_filtered = self.__delete_item_from_list(product_list, product_id)
+
+        cart_filtered = ShoppingCart(
+            content=product_list_filtered, cart_uuid=shopping_cart_id
+        )
+        self.delete_by_id(shopping_cart_id)
+        self.__save_shoppin_cart(cart_filtered)
+
+    def __delete_item_from_list(self, product_list:list[Product], product_id:str) -> list[Product]:
+        cleaned_list = []
+
+        for product in product_list:
+            if product.uuid != product_id:
+                cleaned_list.append(product)
+                continue
+            
+            if product.quantity > 1:
+                product.quantity -= 1
+                cleaned_list.append(product)
+                continue
+        
+        return cleaned_list
+    
+    def __update_product_from_list(self, product_list:list[Product], product_id:str) -> list[Product]:
+        updated_list = []
+
+        for product in product_list:
+            if product.uuid != product_id:
+                updated_list.append(product)
+                continue
+            
+            else:
+                product.quantity += 1
+                updated_list.append(product)
+                continue
+        
+        return updated_list

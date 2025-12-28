@@ -8,8 +8,7 @@ class ShopingCartSaver:
     def __init__(self, saver: ShoppingCartRepository):
         self.saver = saver
 
-    def save(self, shopping_cart_uuid:str, name: str, quantity: int, price: float) -> str:
-        uuid = uuid4().hex
-        product = Product(uuid=uuid, name=name, quantity=quantity, price=price)
+    def save(self, shopping_cart_uuid:str, product_uuid:str, name: str, quantity: int, price: float) -> str:
+        product = Product(uuid=product_uuid, name=name, quantity=quantity, price=price)
         self.saver.save_product(shopping_cart_uuid, product)
-        return uuid
+        return product_uuid
