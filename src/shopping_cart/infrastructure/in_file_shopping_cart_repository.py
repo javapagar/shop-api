@@ -12,19 +12,13 @@ class InFileShoppingCartRepository(ShoppingCartRepository):
         self._name = name
 
     def save_product(self, shopping_cart_id: str, product: Product) -> None:
-        shopping_cart = self.get_by_id(shopping_cart_id)
-        product_list = shopping_cart.content.root
+        product_list = self.__pop_product(shopping_cart_id, product.uuid)
         
-        existing_product = self.get_product_by_id(shopping_cart_id, product.uuid)
-        if existing_product is None:
-            product_list.append(product)
-        else:
-            product_list = self.__update_product_from_list(product_list, product.uuid)
+        product_list.append(product)
         
         updated_shopping_cart = ShoppingCart(
             content=product_list, cart_uuid=shopping_cart_id
         )
-        
 
         self.__save_shoppin_cart(updated_shopping_cart)
 
@@ -113,21 +107,11 @@ class InFileShoppingCartRepository(ShoppingCartRepository):
             if product.quantity > 1:
                 product.quantity -= 1
                 cleaned_list.append(product)
-                continue
+
         
         return cleaned_list
     
-    def __update_product_from_list(self, product_list:list[Product], product_id:str) -> list[Product]:
-        updated_list = []
-
-        for product in product_list:
-            if product.uuid != product_id:
-                updated_list.append(product)
-                continue
-            
-            else:
-                product.quantity += 1
-                updated_list.append(product)
-                continue
-        
-        return updated_list
+    def __pop_product(self, shopping_cart_id:str, product_id:str) -> list[Product]:
+        shopping_cart = self.get_by_id(shopping_cart_id)
+        product_list = shopping_cart.content.root
+        return [product for product in product_list if product.uuid != product_id]

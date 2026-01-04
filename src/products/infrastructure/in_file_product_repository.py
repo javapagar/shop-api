@@ -40,3 +40,7 @@ class InFileProductRepository(ProductRepository):
     def __save_list(self, product_list: list[Product]):
         with open(self._name, "wb") as file:
             pickle.dump(product_list, file)
+    
+    def __pop_item(self, product_id:str, product_list: list[Product]) -> list[Product]:
+        
+        return [product for product in product_list if product.uuid != product_id]

@@ -18,21 +18,28 @@ class ProductCartController:
         product_dict =self.search_product(uuid_product)
         if product_dict is None:
             raise ValueError("Product %s not exists", uuid_product)
+        
         product_dict = self.decrease_quantity(product_dict)
 
         product_in_cart = self.search_product_in_cart(uuid_product, uuid_cart)
+        
         if product_in_cart is not None:
-            product_in_cart = self.increase_quantity(product_in_cart)
+            product_to_cart = self.increase_quantity(product_in_cart)
         else:
-            product_in_cart = product_dict
-            product_in_cart.update({"quantity":1})
+            product_to_cart = product_dict
+            product_to_cart.update({"quantity":1})
 
-        product = ProductResponse(**product_in_cart)
+        product_to_cart = ProductResponse(**product_to_cart)
 
+        return self.save_product_in_cart(uuid_cart, product_to_cart)
+
+
+    def save_product_in_cart(self, uuid_cart:str, product:ProductResponse):
         cart_saver = ShopingCartSaver(self._cart_repository)
         return cart_saver.save(
             uuid_cart, product.uuid, product.name, product.quantity, product.price
         )
+    
 
     def search_product_in_cart(
         self, uuid_product: str, uuid_cart: str
@@ -54,7 +61,7 @@ class ProductCartController:
             product_dict_aux.update({field_name: increase_quantity})
             return product_dict_aux
         
-        raise ValueError("Field '%s' not exist", field_name)
+        raise Exception("Field '%s' not exist", field_name)
     
     def decrease_quantity(self, product_dict: dict[str, Any]) -> dict[str,Any]:
         product_dict_aux = product_dict.copy()

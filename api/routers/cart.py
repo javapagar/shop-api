@@ -63,7 +63,11 @@ async def save_product_cart(shopping_product_request: ShoppingCartProductRequest
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
-
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
 
 @router.get(
     "/{cart_uuid}/product/{product_uuid}",
