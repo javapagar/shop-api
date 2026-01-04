@@ -7,12 +7,17 @@ from src.products.domain.product import Product
 
 
 class InFileProductRepository(ProductRepository):
-    def __init__(self, name:str):
+    def __init__(self, name: str):
         self._name = name
         self.__initialize()
 
     def save(self, product: Product) -> None:
         product_list: list[Product] = self.get_all()
+        has_product = self.find(product.uuid)
+
+        if has_product is not None:
+            product_list = self.__pop_item(has_product.uuid, product_list)
+
         product_list.append(product)
         self.__save_list(product_list)
 
@@ -23,14 +28,14 @@ class InFileProductRepository(ProductRepository):
 
     def find(self, id) -> Optional[Product]:
         product_list = self.get_all()
-        product_filtered:list = list(
+        product_filtered: list = list(
             filter(
                 lambda product: product if product.uuid == id else None, product_list
             )
         )
         if len(product_filtered) == 0:
             return None
-        
+
         return product_filtered[0]
 
     def __initialize(self):
@@ -40,7 +45,6 @@ class InFileProductRepository(ProductRepository):
     def __save_list(self, product_list: list[Product]):
         with open(self._name, "wb") as file:
             pickle.dump(product_list, file)
-    
-    def __pop_item(self, product_id:str, product_list: list[Product]) -> list[Product]:
-        
+
+    def __pop_item(self, product_id: str, product_list: list[Product]) -> list[Product]:
         return [product for product in product_list if product.uuid != product_id]
