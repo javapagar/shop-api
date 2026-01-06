@@ -21,10 +21,20 @@ class InFileUserRepository(UserRepository):
             user_list = pickle.load(file)
         return user_list
 
-    def find(self, uuid: str) -> User:
+    def find_by_uuid(self, uuid: str) -> User:
         user_list = self.get_all()
         user_filtered: list = list(
             filter(lambda user: user if user.uuid == uuid else None, user_list)
+        )
+        if len(user_filtered) == 0:
+            return None
+
+        return user_filtered[0]
+    
+    def find(self, email:str) -> User:
+        user_list = self.get_all()
+        user_filtered: list = list(
+            filter(lambda user: user if user.email == email else None, user_list)
         )
         if len(user_filtered) == 0:
             return None

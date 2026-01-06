@@ -1,5 +1,7 @@
 from typing import Any
+import os
 
+from api.domain.env_vars import PATH_PRODUCT, PATH_USER_CART
 from api.domain.product_response import ProductResponse
 from src.shopping_cart.application.shopping_cart_saver import ShopingCartSaver
 from src.shopping_cart.application.shopping_cart_product_searcher import (
@@ -8,14 +10,21 @@ from src.shopping_cart.application.shopping_cart_product_searcher import (
 from src.shopping_cart.application.shopping_cart_product_deleter import (
     ShoppingCartProductDeleter,
 )
+from src.shopping_cart.application.shopping_cart_retriever import ShoppingCartRetriever
 from src.products.application.product_searcher import ProductSearcher
 from src.products.application.product_saver import ProductSaver
+from src.products.infrastructure.in_file_product_repository import (
+    InFileProductRepository,
+)
+from src.shopping_cart.infrastructure.in_file_shopping_cart_repository import (
+    InFileShoppingCartRepository,
+)
 
 
 class ProductCartController:
-    def __init__(self, product_repository, cart_repository):
-        self._product_repository = product_repository
-        self._cart_repository = cart_repository
+    def __init__(self):
+        self._product_repository = InFileProductRepository(PATH_PRODUCT)
+        self._cart_repository = InFileShoppingCartRepository(PATH_USER_CART)
 
     def add_product_to_cart(self, uuid_product: str, uuid_cart: str) -> str:
         product_dict = self.search_product(uuid_product)
@@ -99,3 +108,8 @@ class ProductCartController:
             product_dict.get("price"),
             product_dict.get("uuid"),
         )
+
+
+    def get_product_cart(self, uuid_cart:str) -> dict[str, Any]:
+        retriever = ShoppingCartRetriever(self._cart_repository)
+        return retriever.retrieve_all(cart_uuid=uuid_cart)

@@ -1,37 +1,39 @@
-import os
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.application.product_cart_controller import ProductCartController
+from api.application.login_cotroller import LoginCotroller
+
+from api.domain.authenticator import OAUTH2_SCHEME
 from api.domain.shopping_cart_product_request_reduced import ShoppingCartProductRequest
 from api.domain.shopping_cart_product_list_response import (
     ShoppingCartProductListResponse,
 )
 from api.domain.product_response import ProductResponse
 from api.domain.tags import Tags
-from api.domain.uuid_value import UUIDValue
-from src.shopping_cart.application.shopping_cart_saver import ShopingCartSaver
-from src.shopping_cart.application.shopping_cart_product_searcher import (
-    ShoppingCartProductSearcher,
-)
-from src.shopping_cart.application.shopping_cart_retriever import ShoppingCartRetriever
 
-from src.products.infrastructure.in_file_product_repository import (
-    InFileProductRepository,
-)
-from src.shopping_cart.infrastructure.in_file_shopping_cart_repository import (
-    InFileShoppingCartRepository,
+
+router = APIRouter(
+    prefix="/cart",
+    tags=[Tags.SHOPPING_CART],
 )
 
-router = APIRouter(prefix="/cart", tags=[Tags.SHOPPING_CART])
+controller = ProductCartController()
+login_controller = LoginCotroller()
 
-path_data_cart_file_name = os.getenv("PATH_USER_CART", "./data/cart.pkl")
-cart_repository = InFileShoppingCartRepository(path_data_cart_file_name)
 
-path_data_product_file_name = os.getenv("PATH_PRODUCT", "./data/product.pkl")
-product_repository = InFileProductRepository(path_data_product_file_name)
-
-controller = ProductCartController(product_repository, cart_repository)
+async def check_authorize_to_cart(user_cart_id: str, token: str):
+    user_authenticated = login_controller.decode_user(token)
+    if (
+        user_authenticated.shopping_cart_uuid is None
+        or user_authenticated.shopping_cart_uuid != user_cart_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You are not authorize for this action",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 @router.get(
@@ -40,10 +42,12 @@ controller = ProductCartController(product_repository, cart_repository)
     name="Get shopping cart",
     description="Return all products in shopping cart",
 )
-async def get_all(user_cart_id: str):
-    retriever = ShoppingCartRetriever(repository=cart_repository)
-    products = retriever.retrieve_all(user_cart_id)
-    return products
+async def get_shopping_cart(
+    user_cart_id: str, token: Annotated[str, Depends(OAUTH2_SCHEME)]
+):
+    await check_authorize_to_cart(user_cart_id, token)
+
+    return controller.get_product_cart(user_cart_id)
 
 
 @router.post(
@@ -52,7 +56,13 @@ async def get_all(user_cart_id: str):
     description="Save a product in de shopping cart",
     status_code=status.HTTP_201_CREATED,
 )
-async def save_product_cart(shopping_product_request: ShoppingCartProductRequest):
+async def save_product_cart(
+    shopping_product_request: ShoppingCartProductRequest,
+    token: Annotated[str, Depends(OAUTH2_SCHEME)],
+):
+    await check_authorize_to_cart(
+        shopping_product_request.shopping_cart_uuid.root, token
+    )
     try:
         return controller.add_product_to_cart(
             shopping_product_request.product_uuid.root,
@@ -69,6 +79,7 @@ async def save_product_cart(shopping_product_request: ShoppingCartProductRequest
             detail=str(e),
         )
 
+
 @router.get(
     "/{cart_uuid}/product/{product_uuid}",
     response_model=ProductResponse,
@@ -83,9 +94,12 @@ async def save_product_cart(shopping_product_request: ShoppingCartProductRequest
     name="Get product",
     description="Find a product from the shopping cart by uuid",
 )
-async def get_cart_product(cart_uuid: str, product_uuid):
-    retriever = ShoppingCartProductSearcher(repository=cart_repository)
-    product = retriever.search(cart_uuid, product_uuid)
+async def get_cart_product(
+    cart_uuid: str, product_uuid: str, token: Annotated[str, Depends(OAUTH2_SCHEME)]
+):
+    await check_authorize_to_cart(cart_uuid, token)
+
+    product = controller.search_product_in_cart(product_uuid, cart_uuid)
     if product is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -97,7 +111,13 @@ async def get_cart_product(cart_uuid: str, product_uuid):
 @router.delete(
     "", name="Delete product", description="Delete a product from a shopping cart"
 )
-async def delete_product(shopping_product_request: ShoppingCartProductRequest):
+async def delete_product(
+    shopping_product_request: ShoppingCartProductRequest,
+    token: Annotated[str, Depends(OAUTH2_SCHEME)],
+):
+    await check_authorize_to_cart(
+        shopping_product_request.shopping_cart_uuid.root, token
+    )
     return controller.delete_product_from_cart(
         shopping_product_request.product_uuid.root,
         shopping_product_request.shopping_cart_uuid.root,

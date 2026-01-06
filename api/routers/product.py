@@ -1,6 +1,6 @@
-import os
 from fastapi import APIRouter, status
 
+from api.domain.env_vars import PATH_PRODUCT
 from api.domain.product_request import ProductRequest
 from api.domain.tags import Tags
 from api.domain.uuid_value import UUIDValue
@@ -13,8 +13,7 @@ from src.products.infrastructure.in_file_product_repository import (
 
 router = APIRouter(prefix="/product", tags=[Tags.PRODUCT])
 
-path_product_data_file_name = os.getenv("PATH_PRODUCT", "./data/product.pkl")
-product_repository = InFileProductRepository(path_product_data_file_name)
+product_repository = InFileProductRepository(PATH_PRODUCT)
 
 
 @router.get("")
