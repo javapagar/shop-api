@@ -19,3 +19,10 @@ The API is built using the FastAPI framework.
 This command starts the server.
 You can access the Swagger documentation at:
 http://127.0.0.1:8000/docs
+
+## Docker image
+You can build a docker image using dockerfile:
+`docker build -t <tag_name> .`
+
+You can run a container using:
+`docker run -d -p <host-port:docker-port> --name <container-name> <image-tag_name>`
